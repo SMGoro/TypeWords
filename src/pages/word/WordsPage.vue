@@ -2,9 +2,9 @@
 import { useBaseStore } from "@/stores/base.ts";
 import { useRouter } from "vue-router";
 import BaseIcon from "@/components/BaseIcon.vue";
-import { _getAccomplishDate, _getDictDataByUrl, useNav } from "@/utils";
+import { _getAccomplishDate, _getDictDataByUrl, resourceWrap, useNav } from "@/utils";
 import BasePage from "@/components/BasePage.vue";
-import { DictResource } from "@/types/types.ts";
+import {DictResource, WordPracticeMode} from "@/types/types.ts";
 import { watch } from "vue";
 import { getCurrentStudyWord } from "@/hooks/dict.ts";
 import { useRuntimeStore } from "@/stores/runtime.ts";
@@ -18,9 +18,11 @@ import DeleteIcon from "@/components/icon/DeleteIcon.vue";
 import PracticeSettingDialog from "@/pages/word/components/PracticeSettingDialog.vue";
 import ChangeLastPracticeIndexDialog from "@/pages/word/components/ChangeLastPracticeIndexDialog.vue";
 import { useSettingStore } from "@/stores/setting.ts";
-import recommendDictList from "@/assets/recommend-dict-list.json";
 import CollectNotice from "@/components/CollectNotice.vue";
-import { PracticeSaveWordKey } from "@/utils/const.ts";
+import { useFetch } from "@vueuse/core";
+import { CAN_REQUEST, DICT_LIST, PracticeSaveWordKey } from "@/config/env.ts";
+import { myDictList } from "@/apis";
+import PracticeWordListDialog from "@/pages/word/components/PracticeWordListDialog.vue";
 
 
 const store = useBaseStore()
@@ -41,6 +43,12 @@ watch(() => store.load, n => {
 }, {immediate: true})
 
 async function init() {
+  if (CAN_REQUEST) {
+    let res = await myDictList({type: "word"})
+    if (res.success) {
+      store.setState(Object.assign(store.$state, res.data))
+    }
+  }
   if (store.word.studyIndex >= 3) {
     if (!store.sdict.custom && !store.sdict.words.length) {
       store.word.bookList[store.word.studyIndex] = await _getDictDataByUrl(store.sdict)
@@ -86,6 +94,7 @@ function startPractice() {
 
 let showPracticeSettingDialog = $ref(false)
 let showChangeLastPracticeIndexDialog = $ref(false)
+let showPracticeWordListDialog = $ref(false)
 
 async function goDictDetail(val: DictResource) {
   runtimeStore.editDict = getDefaultDict(val)
@@ -130,30 +139,38 @@ const progressTextRight = $computed(() => {
   return store.sdict?.lastLearnIndex
 })
 
-
 function check(cb: Function) {
   if (!store.sdict.id) {
     Toast.warning('请先选择一本词典')
   } else {
+    runtimeStore.editDict = getDefaultDict(store.sdict)
     cb()
   }
 }
 
-function savePracticeSetting() {
+async function savePracticeSetting() {
   Toast.success('修改成功')
   isSaveData = false
   localStorage.removeItem(PracticeSaveWordKey.key)
+  await store.changeDict(runtimeStore.editDict)
   currentStudy = getCurrentStudyWord()
 }
 
-function saveLastPracticeIndex(e) {
-  store.sdict.lastLearnIndex = e
-  showChangeLastPracticeIndexDialog = false
+async function saveLastPracticeIndex(e) {
   Toast.success('修改成功')
+  runtimeStore.editDict.lastLearnIndex = e
+  showChangeLastPracticeIndexDialog = false
   isSaveData = false
   localStorage.removeItem(PracticeSaveWordKey.key)
+  await store.changeDict(runtimeStore.editDict)
   currentStudy = getCurrentStudyWord()
 }
+
+const {
+  data: recommendDictList,
+  isFetching
+} = useFetch(resourceWrap(DICT_LIST.WORD.RECOMMENDED)).json()
+
 </script>
 
 <template>
@@ -167,7 +184,6 @@ function saveLastPracticeIndex(e) {
             <BaseIcon title="切换词典"
                       class="ml-4"
                       @click="router.push('/dict-list')"
-
             >
               <IconFluentArrowSort20Regular v-if="store.sdict.name"/>
               <IconFluentAdd20Filled v-else/>
@@ -196,21 +212,24 @@ function saveLastPracticeIndex(e) {
       </div>
 
       <div class="w-3/10 flex flex-col justify-evenly">
-        <div class="center text-xl">{{ isSaveData ? '上次学习任务' : '今日任务' }}</div>
+        <div class="center gap-2">
+          <span class="text-xl">{{ isSaveData ? '上次学习任务' : '今日任务' }}</span>
+          <span class="color-blue cursor-pointer" @click="showPracticeWordListDialog = true">词表</span>
+        </div>
         <div class="flex">
           <div class="flex-1 flex flex-col items-center">
             <div class="text-4xl font-bold">{{ currentStudy.new.length }}</div>
             <div class="text">新词</div>
           </div>
-          <template v-if="settingStore.wordPracticeMode === 0">
+          <template v-if="settingStore.wordPracticeMode === WordPracticeMode.System">
             <div class="flex-1 flex flex-col items-center">
               <div class="text-4xl font-bold">{{ currentStudy.review.length }}</div>
-              <div class="text">复习</div>
+              <div class="text">复习上次</div>
             </div>
             <div class="flex-1 flex flex-col items-center">
               <div class="text-4xl font-bold">{{ currentStudy.write.length }}
               </div>
-              <div class="text">默写</div>
+              <div class="text">复习之前</div>
             </div>
           </template>
         </div>
@@ -219,8 +238,8 @@ function saveLastPracticeIndex(e) {
       <div class="flex flex-col items-end justify-around ">
         <div class="flex gap-1 items-center">
           每日目标
-          <div style="color:#ac6ed1;" @click="check(()=>showPracticeSettingDialog = true)"
-               class="bg-third px-2 h-10 flex center text-2xl rounded cursor-pointer">
+          <div style="color:#ac6ed1;"
+               class="bg-third px-2 h-10 flex center text-2xl rounded">
             {{ store.sdict.id ? store.sdict.perDayStudyNumber : 0 }}
           </div>
           个单词
@@ -266,7 +285,7 @@ function saveLastPracticeIndex(e) {
       </div>
     </div>
 
-    <div class="card  flex flex-col">
+    <div class="card  flex flex-col overflow-hidden" v-loading="isFetching">
       <div class="flex justify-between">
         <div class="title">推荐</div>
         <div class="flex gap-4 items-center">
@@ -274,7 +293,7 @@ function saveLastPracticeIndex(e) {
         </div>
       </div>
 
-      <div class="flex gap-4 flex-wrap  mt-4">
+      <div class="flex gap-4 flex-wrap  mt-4 min-h-50">
         <Book :is-add="false"
               quantifier="个词"
               :item="item as any"
@@ -291,6 +310,11 @@ function saveLastPracticeIndex(e) {
   <ChangeLastPracticeIndexDialog
       v-model="showChangeLastPracticeIndexDialog"
       @ok="saveLastPracticeIndex"
+  />
+
+  <PracticeWordListDialog
+      :data="currentStudy"
+      v-model="showPracticeWordListDialog"
   />
 
   <CollectNotice/>

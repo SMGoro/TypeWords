@@ -26,8 +26,8 @@ import { getCurrentStudyWord } from "@/hooks/dict.ts";
 import PracticeSettingDialog from "@/pages/word/components/PracticeSettingDialog.vue";
 import { useSettingStore } from "@/stores/setting.ts";
 import { MessageBox } from "@/utils/MessageBox.tsx";
-import { Origin } from "@/config/ENV.ts";
-import { PracticeSaveWordKey } from "@/utils/const.ts";
+import { CAN_REQUEST, Origin, PracticeSaveWordKey } from "@/config/env.ts";
+import { detail } from "@/apis";
 
 const runtimeStore = useRuntimeStore()
 const base = useBaseStore()
@@ -178,7 +178,7 @@ const showBookDetail = computed(() => {
   return !(isAdd || isEdit);
 })
 
-onMounted(() => {
+onMounted(async () => {
   if (route.query?.isAdd) {
     isAdd = true
     runtimeStore.editDict = getDefaultDict()
@@ -188,14 +188,25 @@ onMounted(() => {
     } else {
       if (!runtimeStore.editDict.words.length
           && !runtimeStore.editDict.custom
-          && ![DictId.wordCollect, DictId.wordWrong, DictId.wordKnown].includes(runtimeStore.editDict.id)
+          && ![DictId.wordCollect, DictId.wordWrong, DictId.wordKnown].includes(runtimeStore.editDict.en_name || runtimeStore.editDict.id)
       ) {
         loading = true
-        _getDictDataByUrl(runtimeStore.editDict).then(r => {
-          loading = false
-          runtimeStore.editDict = r
-        })
+        let r = await _getDictDataByUrl(runtimeStore.editDict)
+        runtimeStore.editDict = r
       }
+
+      if (base.word.bookList.find(book => book.id === runtimeStore.editDict.id)) {
+        if (CAN_REQUEST) {
+          let res = await detail({id: runtimeStore.editDict.id})
+          if (res.success) {
+            runtimeStore.editDict.statistics = res.data.statistics
+            if (res.data.words.length) {
+              runtimeStore.editDict.words = res.data.words
+            }
+          }
+        }
+      }
+      loading = false
     }
   }
 })
@@ -212,39 +223,33 @@ const settingStore = useSettingStore()
 const {nav} = useNav()
 
 //todo 可以和首页合并
-function startPractice() {
-  if (store.sdict.id) {
-    if (!store.sdict.words.length) {
-      return Toast.warning('没有单词可学习！')
-    }
-    localStorage.removeItem(PracticeSaveWordKey.key)
-    window.umami?.track('startStudyWord', {
-      name: store.sdict.name,
-      index: store.sdict.lastLearnIndex,
-      perDayStudyNumber: store.sdict.perDayStudyNumber,
-      custom: store.sdict.custom,
-      complete: store.sdict.complete,
-      wordPracticeMode: settingStore.wordPracticeMode
-    })
-    let currentStudy = getCurrentStudyWord()
-    nav('practice-words/' + store.sdict.id, {}, currentStudy)
-  } else {
-    window.umami?.track('no-dict')
-    Toast.warning('请先选择一本词典')
-  }
-}
-
-async function addMyStudyList() {
+async function startPractice() {
+  localStorage.removeItem(PracticeSaveWordKey.key)
   studyLoading = true
   await base.changeDict(runtimeStore.editDict)
   studyLoading = false
+  window.umami?.track('startStudyWord', {
+    name: store.sdict.name,
+    index: store.sdict.lastLearnIndex,
+    perDayStudyNumber: store.sdict.perDayStudyNumber,
+    custom: store.sdict.custom,
+    complete: store.sdict.complete,
+    wordPracticeMode: settingStore.wordPracticeMode
+  })
+  let currentStudy = getCurrentStudyWord()
+  nav('practice-words/' + store.sdict.id, {}, currentStudy)
+}
+
+async function addMyStudyList() {
+  if (!runtimeStore.editDict.words.length) {
+    return Toast.warning('没有单词可学习！')
+  }
   if (!settingStore.disableShowPracticeSettingDialog) {
     showPracticeSettingDialog = true
     return
   }
   startPractice()
 }
-
 
 let exportLoading = $ref(false)
 let importLoading = $ref(false)
@@ -363,7 +368,7 @@ async function exportData() {
 }
 
 function searchWord() {
-  console.log('wordForm.word',wordForm.word)
+  console.log('wordForm.word', wordForm.word)
 }
 
 defineRender(() => {

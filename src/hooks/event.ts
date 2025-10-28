@@ -37,6 +37,7 @@ export function useEventListener(type: string, listener: EventListenerOrEventLis
         e.ctrlKey = false
         e.altKey = false
         e.shiftKey = false
+        //@ts-ignore
         listener(e)
         e.target.value = '1'
       })
@@ -53,7 +54,6 @@ export function useEventListener(type: string, listener: EventListenerOrEventLis
     }
   })
   const remove = () => {
-    console.log('onUnmounted')
     if (isMobile()) {
       let s = document.querySelector('#typing-listener')
       if (s) {
@@ -71,7 +71,7 @@ export function useEventListener(type: string, listener: EventListenerOrEventLis
 
 export function getShortcutKey(e: KeyboardEvent) {
   let shortcutKey = ''
-  if (e.ctrlKey) shortcutKey += 'Ctrl+'
+  if (e.ctrlKey || e.metaKey) shortcutKey += 'Ctrl+'
   if (e.altKey) shortcutKey += 'Alt+'
   if (e.shiftKey) shortcutKey += 'Shift+'
   if (e.key !== 'Control' && e.key !== 'Alt' && e.key !== 'Shift') {

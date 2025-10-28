@@ -2,7 +2,7 @@
 import { useBaseStore } from "@/stores/base.ts";
 import { useRouter } from "vue-router";
 import BasePage from "@/components/BasePage.vue";
-import { _getDictDataByUrl, msToHourMinute, total, useNav } from "@/utils";
+import { _getDictDataByUrl, msToHourMinute, resourceWrap, total, useNav } from "@/utils";
 import { DictResource, DictType } from "@/types/types.ts";
 import { useRuntimeStore } from "@/stores/runtime.ts";
 import BaseIcon from "@/components/BaseIcon.vue";
@@ -14,11 +14,12 @@ import PopConfirm from "@/components/PopConfirm.vue";
 import { watch } from "vue";
 import { getDefaultDict } from "@/types/func.ts";
 import DeleteIcon from "@/components/icon/DeleteIcon.vue";
-import recommendBookList from "@/assets/book-list.json";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
-import { PracticeSaveArticleKey } from "@/utils/const.ts";
 import isoWeek from 'dayjs/plugin/isoWeek'
+import { useFetch } from "@vueuse/core";
+import { CAN_REQUEST, DICT_LIST, PracticeSaveArticleKey } from "@/config/env.ts";
+import { myDictList } from "@/apis";
 
 dayjs.extend(isoWeek)
 dayjs.extend(isBetween);
@@ -35,6 +36,12 @@ watch(() => store.load, n => {
 }, {immediate: true})
 
 async function init() {
+  if (CAN_REQUEST) {
+    let res = await myDictList({type: "article"})
+    if (res.success) {
+      store.setState(Object.assign(store.$state, res.data))
+    }
+  }
   if (store.article.studyIndex >= 1) {
     if (!store.sbook.custom && !store.sbook.articles.length) {
       store.article.bookList[store.article.studyIndex] = await _getDictDataByUrl(store.sbook, DictType.article)
@@ -152,6 +159,10 @@ const weekList = $computed(() => {
   });
   return list
 })
+
+const {data: recommendBookList, isFetching} = useFetch(resourceWrap(DICT_LIST.ARTICLE.RECOMMENDED)).json()
+
+
 </script>
 
 <template>
@@ -246,7 +257,8 @@ const weekList = $computed(() => {
       </div>
     </div>
 
-    <div class="card  flex flex-col">
+
+    <div class="card flex flex-col min-h-50" v-loading="isFetching">
       <div class="flex justify-between">
         <div class="title">推荐</div>
         <div class="flex gap-4 items-center">
@@ -258,7 +270,7 @@ const weekList = $computed(() => {
         <Book :is-add="false"
               quantifier="篇"
               :item="item as any"
-              v-for="(item, j) in recommendBookList[0]" @click="goBookDetail(item as any)"/>
+              v-for="(item, j) in recommendBookList" @click="goBookDetail(item as any)"/>
       </div>
     </div>
   </BasePage>

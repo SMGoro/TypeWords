@@ -12,7 +12,7 @@ import {useRuntimeStore} from "@/stores/runtime.ts";
 const settingStore = useSettingStore()
 const runtimeStore = useRuntimeStore()
 const router = useRouter()
-const {toggleTheme} = useTheme()
+const {toggleTheme,getTheme} = useTheme()
 
 
 </script>
@@ -42,6 +42,10 @@ const {toggleTheme} = useTheme()
           <span v-if="settingStore.sideExpand">设置</span>
           <div class="red-point" :class="!settingStore.sideExpand && 'top-1 right-0'" v-if="runtimeStore.isNew"></div>
         </div>
+<!--        <div class="row" @click="router.push('/user')">-->
+<!--          <IconFluentPerson20Regular/>-->
+<!--          <span v-if="settingStore.sideExpand">用户</span>-->
+<!--        </div>-->
       </div>
       <div class="bottom flex justify-evenly ">
         <BaseIcon
@@ -54,7 +58,7 @@ const {toggleTheme} = useTheme()
             :title="`切换主题(${settingStore.shortcutKeyMap[ShortcutKey.ToggleTheme]})`"
             @click="toggleTheme"
         >
-          <IconFluentWeatherMoon16Regular v-if="settingStore.theme === 'light'"/>
+          <IconFluentWeatherMoon16Regular v-if="getTheme() === 'light'"/>
           <IconFluentWeatherSunny16Regular v-else/>
         </BaseIcon>
       </div>

@@ -66,7 +66,7 @@ export interface Sentence {
 }
 
 export interface Article {
-  id: string,
+  id?: number,
   title: string,
   titleTranslate: string,
   text: string,
@@ -117,7 +117,9 @@ export enum ShortcutKey {
   ToggleConciseMode = 'ToggleConciseMode',
   TogglePanel = 'TogglePanel',
   RandomWrite = 'RandomWrite',
-  NextRandomWrite = 'NextRandomWrite'
+  NextRandomWrite = 'NextRandomWrite',
+  KnowWord = 'KnowWord',
+  UnknownWord = 'UnknownWord',
 }
 
 export const DefaultShortcutKeyMap = {
@@ -139,6 +141,8 @@ export const DefaultShortcutKeyMap = {
   [ShortcutKey.TogglePanel]: 'Ctrl+L',
   [ShortcutKey.RandomWrite]: 'Ctrl+R',
   [ShortcutKey.NextRandomWrite]: 'Ctrl+Shift+R',
+  [ShortcutKey.KnowWord]: '1',
+  [ShortcutKey.UnknownWord]: '2',
 }
 
 export enum TranslateEngine {
@@ -156,6 +160,7 @@ export type DictResource = {
   translateLanguage: TranslateLanguageType
   //todo 可以考虑删除了
   type?: DictType
+  version?: number
   language: LanguageType
 }
 
@@ -167,6 +172,11 @@ export interface Dict extends DictResource {
   statistics: Statistics[],
   custom: boolean,//是否是自定义词典
   complete: boolean,//是否学习完成，学完了设为true，然后lastLearnIndex重置
+  //后端字段
+  en_name?: string
+  createdBy?: string
+  category_id?: number
+  is_default?: boolean
 }
 
 export interface ArticleItem {
@@ -181,8 +191,9 @@ export const SlideType = {
 
 export interface PracticeData {
   index: number,
-  words: any[],
-  wrongWords: any[],
+  words: Word[],
+  wrongWords: Word[],
+  excludeWords: string[],
 }
 
 export interface TaskWords {
@@ -202,4 +213,19 @@ export enum PracticeArticleWordType {
   Symbol,
   Number,
   Word
+}
+
+//练习模式
+export enum WordPracticeMode {
+  System = 0,
+  Free = 1
+}
+
+//练习类型
+export enum WordPracticeType {
+  FollowWrite,//跟写
+  Spell,
+  Identify,
+  Listen,
+  Dictation
 }

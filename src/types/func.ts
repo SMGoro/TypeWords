@@ -35,7 +35,7 @@ export function getDefaultArticleWord(val: Partial<ArticleWord> = {}): ArticleWo
 
 export function getDefaultArticle(val: Partial<Article> = {}): Article {
   return {
-    id: '',
+    id: null,
     title: '',
     titleTranslate: '',
     text: '',
@@ -66,9 +66,16 @@ export function getDefaultDict(val: Partial<Dict> = {}): Dict {
     perDayStudyNumber: 20,
     custom: false,
     complete: false,
+
+    createdBy: '',
+    en_name: '',
+    category_id: null,
+    is_default: false,
+
     ...val,
     words: shallowReactive(val.words ?? []),
     articles: shallowReactive(val.articles ?? []),
-    statistics: shallowReactive(val.statistics ?? [])
+    statistics: shallowReactive(val.statistics ?? []),
+
   }
 }

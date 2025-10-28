@@ -11,15 +11,17 @@ import BaseButton from "@/components/BaseButton.vue";
 import { useRoute, useRouter } from "vue-router";
 import EditBook from "@/pages/article/components/EditBook.vue";
 import { computed, onMounted } from "vue";
-import { _dateFormat, _getDictDataByUrl, cloneDeep, msToHourMinute, total, useNav } from "@/utils";
+import { _dateFormat, _getDictDataByUrl, msToHourMinute, resourceWrap, total, useNav } from "@/utils";
 import BaseIcon from "@/components/BaseIcon.vue";
 import { useArticleOptions } from "@/hooks/dict.ts";
 import { getDefaultArticle, getDefaultDict } from "@/types/func.ts";
 import Toast from "@/components/base/toast/Toast.ts";
 import ArticleAudio from "@/pages/article/components/ArticleAudio.vue";
 import { MessageBox } from "@/utils/MessageBox.tsx";
-import book_list from "@/assets/book-list.json";
 import { useSettingStore } from "@/stores/setting.ts";
+import { useFetch } from "@vueuse/core";
+import { CAN_REQUEST, DICT_LIST } from "@/config/env.ts";
+import { detail } from "@/apis";
 
 const runtimeStore = useRuntimeStore()
 const settingStore = useSettingStore()
@@ -56,7 +58,7 @@ async function addMyStudyList() {
   }
 
   studyLoading = true
-  base.changeBook(sbook)
+  await base.changeBook(sbook)
   studyLoading = false
 
   window.umami?.track('startStudyArticle', {
@@ -82,17 +84,29 @@ async function init() {
     } else {
       if (!runtimeStore.editDict?.articles?.length
           && !runtimeStore.editDict?.custom
-          && ![DictId.articleCollect].includes(runtimeStore.editDict.id)
+          && ![DictId.articleCollect].includes(runtimeStore.editDict.en_name || runtimeStore.editDict.id)
+          && !runtimeStore.editDict?.is_default
       ) {
         loading = true
         let r = await _getDictDataByUrl(runtimeStore.editDict, DictType.article)
-        loading = false
         runtimeStore.editDict = r
+      }
+
+      if (base.article.bookList.find(book => book.id === runtimeStore.editDict.id)) {
+        if (CAN_REQUEST) {
+          let res = await detail({id: runtimeStore.editDict.id})
+          if (res.success) {
+            runtimeStore.editDict.statistics = res.data.statistics
+            if (res.data.articles.length) {
+              runtimeStore.editDict.articles = res.data.articles
+            }
+          }
+        }
       }
       if (runtimeStore.editDict.articles.length) {
         selectArticle = runtimeStore.editDict.articles[0]
       }
-      console.log('runtimeStore.editDict', runtimeStore.editDict)
+      loading = false
     }
   }
 }
@@ -109,12 +123,14 @@ const {
   toggleArticleCollect
 } = useArticleOptions()
 
+const {data: book_list} = useFetch(resourceWrap(DICT_LIST.ARTICLE.ALL)).json()
+
 function reset() {
   MessageBox.confirm(
       '继续此操作会重置所有文章，并从官方书籍获取最新文章列表，学习记录不会被重置。确认恢复默认吗？',
       '恢复默认',
       async () => {
-        let dict = book_list.flat().find(v => v.url === runtimeStore.editDict.url) as Dict
+        let dict = book_list.value.find(v => v.url === runtimeStore.editDict.url) as Dict
         if (dict && dict.id) {
           dict = await _getDictDataByUrl(dict, DictType.article)
           let rIndex = base.article.bookList.findIndex(v => v.id === runtimeStore.editDict.id)

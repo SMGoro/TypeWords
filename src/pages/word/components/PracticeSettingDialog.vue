@@ -12,11 +12,12 @@ import {useSettingStore} from "@/stores/setting.ts";
 import Toast from "@/components/base/toast/Toast.ts";
 import ChangeLastPracticeIndexDialog from "@/pages/word/components/ChangeLastPracticeIndexDialog.vue";
 import Tooltip from "@/components/base/Tooltip.vue";
+import {useRuntimeStore} from "@/stores/runtime.ts";
 
 const Dialog = defineAsyncComponent(() => import('@/components/dialog/Dialog.vue'))
 
-const store = useBaseStore()
 const settings = useSettingStore()
+const runtimeStore = useRuntimeStore()
 
 const model = defineModel()
 
@@ -36,8 +37,8 @@ let tempDisableShowPracticeSettingDialog = $ref(false)
 
 
 function changePerDayStudyNumber() {
-  store.sdict.perDayStudyNumber = tempPerDayStudyNumber
-  store.sdict.lastLearnIndex = tempLastLearnIndex
+  runtimeStore.editDict.perDayStudyNumber = tempPerDayStudyNumber
+  runtimeStore.editDict.lastLearnIndex = tempLastLearnIndex
   settings.wordPracticeMode = temPracticeMode
   settings.disableShowPracticeSettingDialog = tempDisableShowPracticeSettingDialog
   emit('ok')
@@ -45,9 +46,9 @@ function changePerDayStudyNumber() {
 
 watch(() => model.value, (n) => {
   if (n) {
-    if (store.sdict.id) {
-      tempPerDayStudyNumber = store.sdict.perDayStudyNumber
-      tempLastLearnIndex = store.sdict.lastLearnIndex
+    if (runtimeStore.editDict.id) {
+      tempPerDayStudyNumber = runtimeStore.editDict.perDayStudyNumber
+      tempLastLearnIndex = runtimeStore.editDict.lastLearnIndex
       temPracticeMode = settings.wordPracticeMode
       tempDisableShowPracticeSettingDialog = settings.disableShowPracticeSettingDialog
     } else {
@@ -61,12 +62,25 @@ watch(() => model.value, (n) => {
   <Dialog v-model="model" title="学习设置" :footer="true"
           @ok="changePerDayStudyNumber">
     <div class="target-modal color-main">
+      <div class="center">
+        <div class="flex gap-4 text-center h-30 w-85">
+          <div class="mode-item" :class="temPracticeMode == 0 && 'active'" @click=" temPracticeMode = 0">
+            <div class="title text-align-center">智能模式</div>
+            <div class="desc mt-2">自动规划学习、复习、听写、默写</div>
+          </div>
+          <div class="mode-item" :class="temPracticeMode == 1 && 'active'" @click=" temPracticeMode = 1">
+            <div class="title">自由模式</div>
+            <div class="desc mt-2">自由练习，系统不强制复习与默写</div>
+          </div>
+        </div>
+      </div>
+
       <div class="text-center mt-2 mb-8">
-        <span>从<span class="text-3xl mx-2 lh">{{ tempLastLearnIndex }}</span>个开始，</span>
+        <span>从第<span class="text-3xl mx-2 lh">{{ tempLastLearnIndex }}</span>个开始，</span>
         <span>每日<span class="text-3xl mx-2 lh">{{ tempPerDayStudyNumber }}</span>个，</span>
         <span>预计<span
-            class="text-3xl mx-2 lh">{{
-            _getAccomplishDays(store.sdict.length - tempLastLearnIndex, tempPerDayStudyNumber)
+          class="text-3xl mx-2 lh">{{
+            _getAccomplishDays(runtimeStore.editDict.length - tempLastLearnIndex, tempPerDayStudyNumber)
           }}</span>天完成</span>
       </div>
       <div class="flex mb-4 gap-space">
@@ -84,16 +98,9 @@ watch(() => model.value, (n) => {
                   :step="10"
                   show-text
                   class="my-1"
-                  :max="store.sdict.words.length" v-model="tempLastLearnIndex"/>
+                  :max="runtimeStore.editDict.words.length" v-model="tempLastLearnIndex"/>
           <BaseButton @click="show = true">从词典选起始位置</BaseButton>
         </div>
-      </div>
-
-      <div class="gap-space">
-        <RadioGroup v-model="temPracticeMode" class="flex-col gap-0!">
-          <Radio :value="0" label="智能模式，系统自动计算复习单词与默写单词"/>
-          <Radio :value="1" label="自由模式，系统不强制复习与默写"/>
-        </RadioGroup>
       </div>
     </div>
     <template v-slot:footer-left v-if="showLeftOption">
@@ -106,8 +113,8 @@ watch(() => model.value, (n) => {
     </template>
   </Dialog>
   <ChangeLastPracticeIndexDialog
-      v-model="show"
-      @ok="e => {
+    v-model="show"
+    @ok="e => {
         tempLastLearnIndex = e
         show = false
       }"
@@ -122,6 +129,14 @@ watch(() => model.value, (n) => {
 
   .lh {
     color: rgb(176, 116, 211)
+  }
+
+  .mode-item{
+    @apply w-50% border border-blue border-solid p-2 rounded-lg cursor-pointer;
+  }
+
+  .active{
+    @apply bg-blue color-white;
   }
 }
 </style>

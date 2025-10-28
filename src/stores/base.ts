@@ -1,10 +1,12 @@
-import {defineStore} from 'pinia'
-import {Dict, DictId, Word} from "../types/types.ts"
-import {_getAccomplishDate, _getStudyProgress, checkAndUpgradeSaveDict} from "@/utils";
-import {SAVE_DICT_KEY} from "@/utils/const.ts";
-import {shallowReactive} from "vue";
-import {getDefaultDict} from "@/types/func.ts";
-import {get, set} from 'idb-keyval'
+import { defineStore } from 'pinia'
+import { Dict, DictId, Word } from "../types/types.ts"
+import { _getStudyProgress, checkAndUpgradeSaveDict, shakeCommonDict } from "@/utils";
+import { shallowReactive } from "vue";
+import { getDefaultDict } from "@/types/func.ts";
+import { get, set } from 'idb-keyval'
+import { CAN_REQUEST, IS_LOGIN, IS_OFFICIAL, SAVE_DICT_KEY } from "@/config/env.ts";
+import { add2MyDict, dictListVersion, myDictList } from "@/apis";
+import Toast from "@/components/base/toast/Toast.ts";
 
 export interface BaseState {
   simpleWords: string[],
@@ -16,7 +18,8 @@ export interface BaseState {
   article: {
     bookList: Dict[],
     studyIndex: number,
-  }
+  },
+  dictListVersion: number
 }
 
 export const DefaultBaseState = (): BaseState => ({
@@ -33,19 +36,7 @@ export const DefaultBaseState = (): BaseState => ({
     bookList: [
       getDefaultDict({id: DictId.wordCollect, name: '收藏'}),
       getDefaultDict({id: DictId.wordWrong, name: '错词'}),
-      getDefaultDict({id: DictId.wordKnown, name: '已掌握',description:'已掌握后的单词不会出现在练习中'}),
-      // getDefaultDict({
-      //   id: 'nce-new-2',
-      //   name: '新概念英语(新版)-2',
-      //   description: '新概念英语新版第二册',
-      //   category: '青少年英语',
-      //   tags: ['新概念英语'],
-      //   url: 'nce-new-2_v2.json',
-      //   length: 862,
-      //   translateLanguage: 'common',
-      //   language: 'en',
-      //   type: DictType.word
-      // }),
+      getDefaultDict({id: DictId.wordKnown, name: '已掌握', description: '已掌握后的单词不会出现在练习中'}),
     ],
     studyIndex: -1,
   },
@@ -54,7 +45,8 @@ export const DefaultBaseState = (): BaseState => ({
       getDefaultDict({id: DictId.articleCollect, name: '收藏'})
     ],
     studyIndex: -1,
-  }
+  },
+  dictListVersion: 1
 })
 
 export const useBaseStore = defineStore('base', {
@@ -128,17 +120,25 @@ export const useBaseStore = defineStore('base', {
       })
       this.$patch(obj)
     },
-    async init(outData?: any) {
+    async init() {
       return new Promise(async resolve => {
         try {
-          if (outData) {
-            this.setState(outData)
-          } else {
-            let configStr: string = await get(SAVE_DICT_KEY.key)
-            let data = checkAndUpgradeSaveDict(configStr)
-            this.setState(data)
+          let configStr: string = await get(SAVE_DICT_KEY.key)
+          let data = checkAndUpgradeSaveDict(configStr)
+          if (IS_OFFICIAL) {
+            let r = await dictListVersion()
+            if (r.success) {
+              data.dictListVersion = r.data
+            }
           }
-          set(SAVE_DICT_KEY.key, JSON.stringify({val: this.$state, version: SAVE_DICT_KEY.version}))
+          if (CAN_REQUEST) {
+            let res = await myDictList()
+            if (res.success) {
+              Object.assign(data, res.data)
+            }
+          }
+          this.setState(data)
+          set(SAVE_DICT_KEY.key, JSON.stringify({val: shakeCommonDict(this.$state), version: SAVE_DICT_KEY.version}))
         } catch (e) {
           console.error('读取本地dict数据失败', e)
         }
@@ -146,7 +146,13 @@ export const useBaseStore = defineStore('base', {
       })
     },
     //改变词典
-    changeDict(val: Dict) {
+    async changeDict(val: Dict) {
+      if (CAN_REQUEST) {
+        let r = await add2MyDict(val)
+        if (!r.success) {
+          return Toast.error(r.msg)
+        }
+      }
       //把其他的词典的单词数据都删掉，全保存在内存里太卡了
       this.word.bookList.slice(3).map(v => {
         if (!v.custom) {
@@ -161,13 +167,20 @@ export const useBaseStore = defineStore('base', {
         this.word.studyIndex = rIndex
         this.word.bookList[this.word.studyIndex].words = shallowReactive(val.words)
         this.word.bookList[this.word.studyIndex].perDayStudyNumber = val.perDayStudyNumber
+        this.word.bookList[this.word.studyIndex].lastLearnIndex = val.lastLearnIndex
       } else {
         this.word.bookList.push(getDefaultDict(val))
         this.word.studyIndex = this.word.bookList.length - 1
       }
     },
     //改变书籍
-    changeBook(val: Dict) {
+    async changeBook(val: Dict) {
+      if (CAN_REQUEST) {
+        let r = await add2MyDict(val)
+        if (!r.success) {
+          return Toast.error(r.msg)
+        }
+      }
       //把其他的书籍里面的文章数据都删掉，全保存在内存里太卡了
       this.article.bookList.slice(1).map(v => {
         if (!v.custom) {

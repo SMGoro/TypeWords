@@ -1,18 +1,14 @@
-import { SAVE_DICT_KEY, SAVE_SETTING_KEY } from "@/utils/const.ts";
-import { BaseState, DefaultBaseState } from "@/stores/base.ts";
-import { getDefaultSettingState, SettingState } from "@/stores/setting.ts";
-import { Dict, DictId, DictResource, DictType } from "@/types/types.ts";
-import { useRouter } from "vue-router";
-import { useRuntimeStore } from "@/stores/runtime.ts";
+import {BaseState, DefaultBaseState, useBaseStore} from "@/stores/base.ts";
+import {getDefaultSettingState, SettingState} from "@/stores/setting.ts";
+import {Dict, DictId, DictResource, DictType} from "@/types/types.ts";
+import {useRouter} from "vue-router";
+import {useRuntimeStore} from "@/stores/runtime.ts";
 import dayjs from 'dayjs'
 import axios from "axios";
-import { env } from "@/config/ENV.ts";
-import { nextTick } from "vue";
+import {ENV, IS_OFFICIAL, RESOURCE_PATH, SAVE_DICT_KEY, SAVE_SETTING_KEY} from "@/config/env.ts";
+import {nextTick} from "vue";
 import Toast from '@/components/base/toast/Toast.ts'
-import { getDefaultArticle, getDefaultDict, getDefaultWord } from "@/types/func.ts";
-import { set } from "idb-keyval";
-import book_list from "@/assets/book-list.json";
-import dict_list from "@/assets/dict-list.json";
+import {getDefaultDict, getDefaultWord} from "@/types/func.ts";
 import duration from "dayjs/plugin/duration";
 
 dayjs.extend(duration);
@@ -58,141 +54,6 @@ export function checkAndUpgradeSaveDict(val: any) {
         })
         return defaultState
       } else {
-        if (version === 3) {
-          localStorage.setItem('type-word-dict-v3', JSON.stringify(state))
-          set('type-word-dict-v3', JSON.stringify(state))
-
-          let studyDictId = ''
-          if (state.current.index >= 0) {
-            let dict = state.myDictList[state.current.index]
-            if (dict) {
-              studyDictId = dict.id
-            }
-          }
-
-          const safeString = (str) => (typeof str === 'string' ? str.trim() : '');
-
-          function formatWord(dict) {
-            dict.words = dict.words?.map?.(v => {
-              return getDefaultWord({
-                word: v.name,
-                phonetic0: v.usphone,
-                phonetic1: v.ukphone,
-                trans: v.trans.map(line => {
-                  const match = line.match(/^([^\s.]+\.?)\s*(.*)$/);
-                  if (match) {
-                    let pos = safeString(match[1]);
-                    let cn = safeString(match[2]);
-
-                    // 如果 pos 不是常规词性（不以字母开头），例如 "【名】"
-                    if (!/^[a-zA-Z]+\.?$/.test(pos)) {
-                      cn = safeString(line); // 整行放到 cn
-                      pos = ''; // pos 置空
-                    }
-
-                    return {pos, cn};
-                  }
-                  return {pos: '', cn: safeString(line)};
-                })
-              })
-            }) || []
-            dict.statistics = dict.statistics?.map?.(v => {
-              return {
-                startDate: v.startDate,
-                spend: v.endDate - v.startDate,
-                total: v.total,
-                new: v.total,
-                wrong: v.wrongWordNumber
-              }
-            }) || []
-            dict.articles = dict.articles?.map?.(v => {
-              let r = getDefaultArticle({
-                textTranslate: v.textCustomTranslate
-              })
-              checkRiskKey(r, v)
-              return r
-            }) || []
-          }
-
-          state.myDictList.map((v: any) => {
-            try {
-              let currentDictId = v.id
-              let currentType = v.type
-              delete v.type
-              if (['collect', 'simple', 'wrong'].includes(currentType)) {
-                formatWord(v)
-                delete v.id
-                delete v.name
-                if (currentType === 'collect') {
-                  if (v.words.length) {
-                    if (currentDictId === studyDictId) defaultState.word.studyIndex = 0
-                    checkRiskKey(defaultState.word.bookList[0], cloneDeep(v))
-                    defaultState.word.bookList[0].length = v.words.length
-                  }
-                  if (v.articles.length) {
-                    if (currentDictId === studyDictId) defaultState.article.studyIndex = 0
-                    checkRiskKey(defaultState.article.bookList[0], cloneDeep(v))
-                    defaultState.article.bookList[0].length = v.articles.length
-                  }
-                }
-                if (currentType === 'simple' || currentType === 'skip') {
-                  if (currentDictId === studyDictId) defaultState.word.studyIndex = 2
-                  checkRiskKey(defaultState.word.bookList[2], v)
-                  defaultState.word.bookList[2].length = v.words.length
-                }
-                if (currentType === 'wrong') {
-                  if (currentDictId === studyDictId) defaultState.word.studyIndex = 1
-                  checkRiskKey(defaultState.word.bookList[1], v)
-                  defaultState.word.bookList[1].length = v.words.length
-                }
-              }
-              if (currentType === 'word') {
-                if (v.isCustom) {
-                  formatWord(v)
-                  let dict = getDefaultDict({custom: true})
-                  checkRiskKey(dict, v)
-                  dict.length = dict.words.length
-                  defaultState.word.bookList.push(dict)
-                  if (currentDictId === studyDictId) defaultState.word.studyIndex = defaultState.word.bookList.length - 1
-                } else {
-                  //当时把选中的词典的id设为随机了，导致通过id找不到
-                  let r: any = dict_list.flat().find(a => a.name === v.name)
-                  if (r) {
-                    formatWord(v)
-                    let dict = getDefaultDict(r)
-                    checkRiskKey(dict, v)
-                    dict.id = r.id
-                    defaultState.word.bookList.push(dict)
-                    if (currentDictId === studyDictId) defaultState.word.studyIndex = defaultState.word.bookList.length - 1
-                  }
-                }
-              }
-              if (currentType === 'article') {
-                if (v.isCustom) {
-                  formatWord(v)
-                  let dict = getDefaultDict({custom: true})
-                  checkRiskKey(dict, v)
-                  dict.length = dict.articles.length
-                  defaultState.article.bookList.push(dict)
-                  if (currentDictId === studyDictId) defaultState.article.studyIndex = defaultState.article.bookList.length - 1
-                } else {
-                  //当时把选中的词典的id设为随机了
-                  let r: any = book_list.flat().find(a => a.name === v.name)
-                  if (r) {
-                    formatWord(v)
-                    let dict = getDefaultDict(r)
-                    checkRiskKey(dict, v)
-                    dict.id = r.id
-                    defaultState.article.bookList.push(dict)
-                    if (currentDictId === studyDictId) defaultState.article.studyIndex = defaultState.article.bookList.length - 1
-                  }
-                }
-              }
-            } catch (e) {
-              console.error('升级数据失败！', e)
-            }
-          })
-        }
         checkRiskKey(defaultState, state)
         return defaultState
       }
@@ -263,22 +124,7 @@ export function shakeCommonDict(n: BaseState): BaseState {
 }
 
 export function isMobile(): boolean {
-  return /Mobi|Android|iPhone/i.test(navigator.userAgent)
-  return (
-    'ontouchstart' in window ||
-    navigator.maxTouchPoints > 0 ||
-    navigator.msMaxTouchPoints > 0
-  );
-}
-
-export async function getDictFile(url: string) {
-  try {
-    const r = await fetch(url);
-    return await r.json();
-  } catch (err) {
-    console.log('getDictFile_error', err);
-    return null;
-  }
+  return /Mobi|iPhone|Android|ipad|tablet/i.test(window.navigator.userAgent)
 }
 
 export function useNav() {
@@ -314,81 +160,6 @@ export function msToHourMinute(ms) {
 
 export function msToMinute(ms) {
   return `${Math.floor(dayjs.duration(ms).asMinutes())}分钟`;
-}
-
-
-export function _fetch(url: string) {
-  return new Promise<any[]>(async (resolve, reject) => {
-    await fetch(url).then(async r => {
-      let v = await r.json()
-      resolve(v)
-    }).catch(r => {
-      console.log('err', r)
-      reject(r)
-    })
-  })
-}
-
-export async function _checkDictWords(dict: Dict) {
-  if ([DictType.collect,
-    DictType.known,
-    DictType.wrong].includes(dict.dictType)) {
-  } else {
-    //TODO　需要和其他需要下载的地方统一
-    //如果不是自定义词典，并且有url地址才去下载
-    if (!dict.custom && dict.fileName) {
-      // let rrr = await axios('http://localhost/static/dict/en/zh/Top50Prepositions-v1.json')
-      // console.log('r', rrr)
-      // return
-      let url = `http://localhost/index.php/v1/support/getDictFile?id=${dict.id}&v=${dict.version}`
-      // let res: any = await axios(`http://localhost/index.php/v1/support/getDictFile?id=2`)
-      let res: any
-      try {
-        res = await axios(url)
-      } catch (err) {
-        console.log('err', err)
-      }
-      console.log('res', res)
-      //说明重定向了
-      let r
-      if (res && res.request.responseURL !== url) {
-        r = res.data
-      } else {
-        let dictLocalUrl = `./dicts/${dict.language}/${dict.type}/${dict.translateLanguage}/${dict.url}`;
-        let r3 = await fetch(dictLocalUrl)
-        try {
-          r = await r3.json()
-        } catch (e) {
-        }
-        console.log('r', r)
-      }
-      // // dict.words = Object.freeze(v)
-      // dict.words = v
-      dict = Object.assign(dict, r)
-    }
-  }
-}
-
-export async function getWordDictList() {
-  let url = `${env.api}/v1/support/getWordDictListFile?v=${env.word_dict_list_version}`
-  let res: any = await axios(url)
-  // let res: any = await axios(`http://localhost/index.php/v1/support/getDictFile?id=2`)
-  console.log('res', res)
-  //说明重定向了
-  let r
-  if (res.request.responseURL !== url) {
-    r = res.data
-  } else {
-    let dictLocalUrl = `./word_dict_list.json`;
-    let r3 = await fetch(dictLocalUrl)
-    try {
-      let r1 = await r3.json()
-      r = r1.data
-    } catch (e) {
-
-    }
-  }
-  return r
 }
 
 //获取完成天数
@@ -453,7 +224,7 @@ export async function _getDictDataByUrl(val: DictResource, type: DictType = Dict
   if (type === DictType.article) {
     dictResourceUrl = `/dicts/${val.language}/article/${val.url}`;
   }
-  let s = await getDictFile(dictResourceUrl)
+  let s = await fetch(resourceWrap(dictResourceUrl, val.version)).then(r => r.json())
   if (s) {
     if (type === DictType.word) {
       return getDefaultDict({...val, words: s})
@@ -666,4 +437,17 @@ export function total(arr, key) {
     a += b[key];
     return a
   }, 0);
+}
+
+export function resourceWrap(resource: string, version?: number) {
+  if (IS_OFFICIAL) {
+    if (resource.includes('.json')) resource = resource.replace('.json', '');
+    if (!resource.includes('http')) resource = RESOURCE_PATH + resource
+    if (version === undefined) {
+      const store = useBaseStore()
+      return `${resource}_v${store.dictListVersion}.json`
+    }
+    return `${resource}_v${version}.json`
+  }
+  return resource;
 }
