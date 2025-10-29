@@ -290,4 +290,117 @@ const {data: recommendBookList, isFetching} = useFetch(resourceWrap(DICT_LIST.AR
     @apply color-gray-500;
   }
 }
+
+// 移动端适配
+@media (max-width: 768px) {
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    
+    .flex.gap-space {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .flex.gap-4.flex-wrap {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    // 优化顶部卡片布局
+    &.flex.justify-between {
+      flex-direction: column;
+      gap: 1rem;
+      
+      > div {
+        width: 100%;
+      }
+      
+      .flex.justify-between.items-end {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.8rem;
+        
+        .flex.gap-4.items-center {
+          justify-content: space-between;
+          
+          .color-blue {
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+        
+        .base-button {
+          width: 100%;
+          min-height: 48px;
+        }
+      }
+    }
+    
+    // 优化统计卡片布局
+    .flex.gap-4.flex-wrap {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      
+      .stat {
+        padding: 0.6rem;
+        
+        .num {
+          font-size: 1rem;
+        }
+        
+        .txt {
+          font-size: 0.75rem;
+        }
+      }
+    }
+    
+    // 本周学习记录优化
+    .flex.gap-2 {
+      gap: 0.3rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      
+      > div {
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.8rem;
+      }
+    }
+  }
+  
+  .stat {
+    padding: 0.8rem;
+    
+    .num {
+      font-size: 1.2rem;
+    }
+    
+    .txt {
+      font-size: 0.8rem;
+    }
+  }
+  
+  .flex.gap-4.items-center {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    .flex.gap-4.flex-wrap {
+      grid-template-columns: 1fr;
+      
+      .stat {
+        padding: 0.5rem;
+      }
+    }
+  }
+}
 </style>

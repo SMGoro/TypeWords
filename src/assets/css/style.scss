@@ -146,7 +146,27 @@ html.dark {
     --article-toolbar-width: 40rem;
     --article-panel-width: 16rem;
   }
+}
 
+// 移动端适配
+@media (max-width: 768px) {
+  :root {
+    --toolbar-width: 100vw;
+    --panel-width: 100vw;
+    --article-width: 100vw;
+    --article-toolbar-width: 100vw;
+    --space: 0.5rem;
+    --stat-gap: 0.3rem;
+    --article-panel-width: 100vw;
+    --word-panel-margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --space: 0.3rem;
+    --stat-gap: 0.2rem;
+  }
 }
 
 .anim {
@@ -447,4 +467,5 @@ a {
   bottom: 0;
   z-index: 9999;
   height: 3rem;
+  // display: none !important;
 }

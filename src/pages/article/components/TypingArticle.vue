@@ -783,4 +783,118 @@ $article-lh: 2.4;
     }
   }
 }
+
+// 移动端适配
+@media (max-width: 768px) {
+  .typing-article {
+    width: 100vw;
+    max-width: 100%;
+    padding: 1rem 0.5rem;
+    
+    // 标题优化
+    header {
+      .title {
+        font-size: 1.2rem;
+        line-height: 1.4;
+        word-break: break-word;
+        margin-bottom: 1rem;
+        
+        .font-family {
+          font-size: 1rem;
+        }
+      }
+      
+      .titleTranslate {
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        opacity: 0.8;
+      }
+    }
+    
+    // 句子显示优化
+    .article-content {
+      article {
+        .section {
+          margin-bottom: 1rem;
+          
+          .sentence {
+            font-size: 1rem;
+            line-height: 1.6;
+            word-break: break-word;
+            margin-bottom: 0.5rem;
+            
+            .word {
+              .word-wrap {
+                padding: 0.1rem 0.05rem;
+                min-height: 24px;
+                display: inline-flex;
+                align-items: center;
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // 翻译区域优化
+    .translate {
+      font-size: 1rem;
+      line-height: 1.4;
+      letter-spacing: 0.1rem;
+      
+      .row {
+        .space {
+          margin-right: 0.1rem;
+        }
+      }
+    }
+    
+    // 问答表单优化
+    .question-form {
+      padding: 0.5rem;
+      
+      .base-button {
+        width: 100%;
+        min-height: 48px;
+        margin-top: 0.5rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .typing-article {
+    padding: 0.5rem 0.3rem;
+    
+    header {
+      .title {
+        font-size: 1rem;
+        
+        .font-family {
+          font-size: 0.9rem;
+        }
+      }
+      
+      .titleTranslate {
+        font-size: 0.8rem;
+      }
+    }
+    
+    .article-content {
+      article {
+        .section {
+          .sentence {
+            font-size: 0.9rem;
+            line-height: 1.5;
+          }
+        }
+      }
+    }
+    
+    .translate {
+      font-size: 0.9rem;
+      line-height: 1.3;
+    }
+  }
+}
 </style>

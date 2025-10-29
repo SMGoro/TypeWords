@@ -175,10 +175,10 @@ const {
 
 <template>
   <BasePage>
-    <div class="card flex gap-10">
+    <div class="card flex gap-10 words-page-main">
       <div class="flex-1 flex flex-col gap-2">
         <div class="flex">
-          <div class="bg-third px-3 h-14 rounded-md flex items-center ">
+          <div class="bg-third px-3 h-14 rounded-md flex items-center dict-selector">
             <span @click="goDictDetail(store.sdict)"
                   class="text-lg font-bold cursor-pointer">{{ store.sdict.name || '请选择词典开始学习' }}</span>
             <BaseIcon title="切换词典"
@@ -190,7 +190,7 @@ const {
             </BaseIcon>
           </div>
         </div>
-        <div class="flex items-end gap-space">
+        <div class="flex items-end gap-space progress-section">
           <div class="flex-1">
             <div class="text-sm flex justify-between">
               <span>{{ progressTextLeft }}</span>
@@ -206,17 +206,17 @@ const {
           </PopConfirm>
 
         </div>
-        <div class="text-sm text-align-end">
+        <div class="text-sm text-align-end completion-date">
           预计完成日期：{{ _getAccomplishDate(store.sdict.words.length, store.sdict.perDayStudyNumber) }}
         </div>
       </div>
 
-      <div class="w-3/10 flex flex-col justify-evenly">
+      <div class="w-3/10 flex flex-col justify-evenly task-section">
         <div class="center gap-2">
           <span class="text-xl">{{ isSaveData ? '上次学习任务' : '今日任务' }}</span>
           <span class="color-blue cursor-pointer" @click="showPracticeWordListDialog = true">词表</span>
         </div>
-        <div class="flex">
+        <div class="flex task-numbers">
           <div class="flex-1 flex flex-col items-center">
             <div class="text-4xl font-bold">{{ currentStudy.new.length }}</div>
             <div class="text">新词</div>
@@ -235,8 +235,8 @@ const {
         </div>
       </div>
 
-      <div class="flex flex-col items-end justify-around ">
-        <div class="flex gap-1 items-center">
+      <div class="flex flex-col items-end justify-around settings-section">
+        <div class="flex gap-1 items-center daily-goal">
           每日目标
           <div style="color:#ac6ed1;"
                class="bg-third px-2 h-10 flex center text-2xl rounded">
@@ -321,4 +321,320 @@ const {
 </template>
 
 <style scoped lang="scss">
+// 移动端适配
+@media (max-width: 768px) {
+  .words-page-main {
+    flex-direction: column;
+    gap: 1rem;
+    
+    .dict-selector {
+      padding: 0.5rem 0.8rem;
+      height: auto;
+      min-height: 3rem;
+      cursor: pointer;
+      position: relative;
+      z-index: 10;
+      
+      span {
+        font-size: 1rem;
+        flex: 1;
+        word-break: break-word;
+        pointer-events: none;
+      }
+      
+      .base-icon {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 11;
+        pointer-events: auto;
+      }
+    }
+    
+    .progress-section {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+      
+      .flex-1 {
+        width: 100%;
+      }
+      
+      .color-blue {
+        min-height: 44px;
+        min-width: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+      }
+    }
+    
+    .completion-date {
+      text-align: left;
+      font-size: 0.8rem;
+    }
+    
+    .task-section {
+      width: 100%;
+      padding: 1rem 0;
+      border-top: 1px solid var(--color-item-border);
+      border-bottom: 1px solid var(--color-item-border);
+      
+      .center {
+        margin-bottom: 1rem;
+        
+        span:first-child {
+          font-size: 1rem;
+        }
+        
+        .color-blue {
+          min-height: 44px;
+          min-width: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.5rem;
+          font-size: 0.9rem;
+        }
+      }
+      
+      .task-numbers {
+        gap: 1rem;
+        
+        .flex-1 {
+          .text-4xl {
+            font-size: 2rem;
+          }
+          
+          .text {
+            font-size: 0.8rem;
+          }
+        }
+      }
+    }
+    
+    .settings-section {
+      width: 100%;
+      align-items: center;
+      gap: 1rem;
+      
+      .daily-goal {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+        
+        .bg-third {
+          padding: 0.3rem 0.8rem;
+          height: auto;
+          min-height: 2.5rem;
+          font-size: 1.5rem;
+        }
+        
+        .color-blue {
+          min-height: 44px;
+          min-width: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.5rem;
+          font-size: 0.9rem;
+        }
+      }
+      
+      .base-button {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1rem;
+        min-height: 48px;
+      }
+    }
+  }
+  
+  // 我的词典和推荐部分
+  .card.flex.flex-col {
+    .flex.justify-between {
+      flex-direction: column;
+      gap: 0.5rem;
+      
+      .title {
+        font-size: 1rem;
+      }
+      
+      .flex.gap-4 {
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        
+        .color-blue {
+          font-size: 0.8rem;
+          min-height: 44px;
+          min-width: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.5rem;
+        }
+        
+        .base-icon {
+          min-width: 44px;
+          min-height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+    }
+    
+    .flex.gap-4.flex-wrap {
+      // 改为grid布局，自适应列数
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+      gap: 0.8rem;
+      
+      .book {
+        width: 100%;
+        height: auto;
+        min-height: 8rem; // 增加最小高度，确保有足够空间
+        padding: 0.6rem;
+        cursor: pointer;
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        box-sizing: border-box;
+        
+        > div:first-child {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 0.3rem;
+          padding-bottom: 2.5rem; // 为底部元素留出空间
+        }
+        
+        .text-base, .title {
+          font-size: 0.85rem;
+          line-height: 1.3;
+          word-break: break-word;
+          margin-bottom: 0.4rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-line-clamp: 3; // 标题最多3行
+          -webkit-box-orient: vertical;
+        }
+        
+        // 移动端隐藏描述
+        .text-sm, .sub-title {
+          display: none !important;
+        }
+        
+        .absolute.bottom-4 {
+          position: absolute;
+          bottom: 2.2rem;
+          right: 0.6rem;
+          font-size: 0.75rem;
+          white-space: nowrap;
+        }
+        
+        .absolute.bottom-2 {
+          position: absolute;
+          bottom: 0.4rem;
+          left: 0.6rem;
+          right: 0.6rem;
+        }
+      }
+    }
+  }
+}
+
+// 超小屏幕适配
+@media (max-width: 480px) {
+  .words-page-main {
+    gap: 0.8rem;
+    
+    .dict-selector {
+      padding: 0.4rem 0.6rem;
+      
+      span {
+        font-size: 0.9rem;
+      }
+    }
+    
+    .task-section {
+      padding: 0.8rem 0;
+      
+      .center {
+        margin-bottom: 0.8rem;
+        
+        span:first-child {
+          font-size: 0.9rem;
+        }
+      }
+      
+      .task-numbers {
+        gap: 0.8rem;
+        
+        .flex-1 {
+          .text-4xl {
+            font-size: 1.8rem;
+          }
+          
+          .text {
+            font-size: 0.7rem;
+          }
+        }
+      }
+    }
+    
+    .settings-section {
+      gap: 0.8rem;
+      
+      .daily-goal {
+        .bg-third {
+          padding: 0.2rem 0.6rem;
+          font-size: 1.2rem;
+        }
+      }
+    }
+  }
+  
+  .card.flex.flex-col {
+    .flex.gap-4.flex-wrap {
+      // 窄屏最小1-2列
+      grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+      gap: 0.6rem;
+      
+      .book {
+        min-height: 7rem;
+        padding: 0.5rem;
+        
+        > div:first-child {
+          padding-bottom: 2.2rem;
+        }
+        
+        .text-base, .title {
+          font-size: 0.75rem;
+          line-height: 1.2;
+          -webkit-line-clamp: 2; // 超小屏标题最多2行
+        }
+        
+        .absolute.bottom-4 {
+          font-size: 0.65rem;
+          bottom: 2rem;
+          right: 0.5rem;
+        }
+        
+        .absolute.bottom-2 {
+          bottom: 0.3rem;
+          left: 0.5rem;
+          right: 0.5rem;
+        }
+      }
+    }
+  }
+}
 </style>

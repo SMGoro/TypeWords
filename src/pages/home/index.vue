@@ -236,4 +236,40 @@ a {
   color: unset;
 }
 
+// 移动端适配
+@media (max-width: 768px) {
+  h1 {
+    font-size: 3rem;
+    margin: 1rem;
+  }
+  
+  h2 {
+    font-size: 1.2rem;
+  }
+  
+  .flex.gap-space {
+    flex-direction: column;
+    gap: 1rem;
+    
+    .card {
+      width: 100%;
+    }
+  }
+  
+  .w-60vw {
+    width: 90vw;
+  }
+  
+  .center.gap-space {
+    gap: 1rem;
+  }
+  
+  .bottom {
+    padding-top: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+}
+
 </style>
