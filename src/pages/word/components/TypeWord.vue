@@ -552,6 +552,7 @@ useEvents([
   word-break: break-word;
   position: relative;
   color: var(--color-font-2);
+  padding-bottom: 8rem;
 
   .phonetic, .translate {
     font-size: 1.2rem;
@@ -624,7 +625,7 @@ useEvents([
 // 移动端适配
 @media (max-width: 768px) {
   .typing-word {
-    padding: 0 0.5rem;
+    padding: 0 0.5rem 12rem;
     
     .word {
       font-size: 2rem !important;
@@ -672,11 +673,20 @@ useEvents([
       }
     }
     
-    // 移动端例句调整
+    // 确保短语和例句区域保持默认层级
+    .phrase-section,
     .sentence {
+      position: relative;
+      z-index: auto;
+    }
+    
+    // 移动端例句和短语调整
+    .sentence,
+    .phrase {
       font-size: 0.9rem;
       line-height: 1.4;
       margin-bottom: 0.5rem;
+      pointer-events: auto; // 允许点击但不调起输入法
     }
     
     // 移动端短语调整
@@ -691,7 +701,7 @@ useEvents([
 // 超小屏幕适配
 @media (max-width: 480px) {
   .typing-word {
-    padding: 0 0.3rem;
+    padding: 0 0.3rem 12rem;
     
     .word {
       font-size: 1.5rem !important;

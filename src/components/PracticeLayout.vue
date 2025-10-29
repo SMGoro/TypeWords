@@ -13,7 +13,7 @@ defineProps<{
     <div class="wrap">
       <slot name="practice"></slot>
     </div>
-    <div class="panel-wrap" :style="{left:panelLeft}" :class="{'has-panel': settingStore.showPanel}">
+    <div class="panel-wrap" :style="{left:panelLeft}" :class="{'has-panel': settingStore.showPanel}" @click.self="settingStore.showPanel = false">
       <slot name="panel"></slot>
     </div>
     <div class="footer-wrap">
@@ -41,8 +41,9 @@ defineProps<{
 
 .footer-wrap {
   position: fixed;
-  bottom: 0.8rem;
+  bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px));
   transition: all var(--anim-time);
+  z-index: 999;
 }
 
 .panel-wrap {
@@ -67,12 +68,12 @@ defineProps<{
     }
     
     .footer-wrap {
-      bottom: -4rem;
+      bottom: calc(-4rem + env(safe-area-inset-bottom, 0px));
     }
   }
   
   .footer-wrap {
-    bottom: 0.5rem;
+    bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     left: 0.5rem;
     right: 0.5rem;
     width: auto;
@@ -81,13 +82,11 @@ defineProps<{
   .panel-wrap {
     position: fixed;
     top: 0;
-    left: 0;
-    right: 0;
+    left: 0 !important;
+    right: 0 !important;
     bottom: 0;
     height: 100vh;
     z-index: 1000;
-    
-    // 面板内容居中显示
     display: flex;
     align-items: center;
     justify-content: center;
@@ -119,13 +118,15 @@ defineProps<{
   }
   
   .footer-wrap {
-    bottom: 0.3rem;
+    bottom: calc(0.3rem + env(safe-area-inset-bottom, 0px));
     left: 0.3rem;
     right: 0.3rem;
   }
   
   .panel-wrap {
     padding: 0.5rem;
+    left: 0 !important;
+    right: 0 !important;
   }
 }
 </style>

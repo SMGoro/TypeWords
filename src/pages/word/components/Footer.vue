@@ -170,6 +170,7 @@ const progress = $computed(() => {
   flex-shrink: 0;
   width: var(--toolbar-width);
   position: relative;
+  z-index: 20; // 提高z-index确保在最上方
 
   &.hide {
     margin-bottom: -6rem;
@@ -186,8 +187,7 @@ const progress = $computed(() => {
     box-sizing: border-box;
     border-radius: .6rem;
     background: var(--color-second);
-    padding: .2rem var(--space) .4rem var(--space);
-    z-index: 2;
+    padding: .2rem var(--space) calc(.4rem + env(safe-area-inset-bottom, 0px)) var(--space);
     border: 1px solid var(--color-item-border);
     box-shadow: var(--shadow);
 
@@ -221,6 +221,7 @@ const progress = $computed(() => {
     box-sizing: border-box;
     position: fixed;
     bottom: 1rem;
+    z-index: 9998; // 确保进度条也在最上方
   }
 
   .arrow {

@@ -24,7 +24,7 @@ provide('tabIndex', computed(() => tabIndex))
           <Close @click="settingStore.showPanel = false"/>
         </Tooltip>
       </header>
-      <div class="flex-1 overflow-hidden">
+      <div class="flex-1 overflow-auto">
         <slot></slot>
       </div>
     </div>
@@ -48,15 +48,20 @@ provide('tabIndex', computed(() => tabIndex))
   .panel {
     width: 90vw;
     max-width: 400px;
-    max-height: 80vh;
+    max-height: 90vh;
+    height: auto;
     border-radius: 0.4rem;
-    
-    header {
-      padding: 0.5rem 0.5rem;
-      
-      .color-main {
-        font-size: 0.9rem;
-      }
+  }
+
+  .panel > div.flex-1 {
+    max-height: calc(90vh - 3.2rem);
+  }
+
+  .panel header {
+    padding: 0.5rem 0.5rem;
+
+    .color-main {
+      font-size: 0.9rem;
     }
   }
 }
@@ -65,14 +70,18 @@ provide('tabIndex', computed(() => tabIndex))
 @media (max-width: 480px) {
   .panel {
     width: 95vw;
-    max-height: 85vh;
-    
-    header {
-      padding: 0.3rem 0.3rem;
-      
-      .color-main {
-        font-size: 0.8rem;
-      }
+    max-height: 94vh;
+  }
+
+  .panel > div.flex-1 {
+    max-height: calc(94vh - 3rem);
+  }
+
+  .panel header {
+    padding: 0.3rem 0.3rem;
+
+    .color-main {
+      font-size: 0.8rem;
     }
   }
 }
