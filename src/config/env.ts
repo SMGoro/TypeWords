@@ -1,8 +1,8 @@
 import { useBaseStore } from "@/stores/base.ts";
 
-export const GITHUB = 'https://github.com/zyronon/TypeWords'
+export const GITHUB = 'https://github.com/SMGoro/TypeWords'
 export const ProjectName = 'Type Words'
-export const Host = '2study.top'
+export const Host = '2study.smgoro.com'
 export const Origin = `https://${Host}`
 export const APP_NAME = 'Type Words'
 
@@ -25,12 +25,12 @@ export const RESOURCE_PATH = ENV.API + 'static'
 
 export const DICT_LIST = {
   WORD: {
-    ALL: '/list/word.json',
-    RECOMMENDED: '/list/recommend_word.json',
+    ALL: './list/word.json',
+    RECOMMENDED: './list/recommend_word.json',
   },
   ARTICLE: {
-    ALL: '/list/article.json',
-    RECOMMENDED: '/list/article.json',
+    ALL: './list/article.json',
+    RECOMMENDED: './list/article.json',
   }
 }
 
